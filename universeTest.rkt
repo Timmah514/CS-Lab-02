@@ -13,8 +13,8 @@
 (define-struct shape (image x y speedx speedy))
 
 (define S1 (make-shape (circle 50 "solid" "red") 20 30 1 1))
-(define S2 (make-shape (circle 20 "solid" "blue") 200 700 1 -1))
-(define S3 (make-shape (circle 40 "solid" "green") 750 70 -1 1))
+(define S2 (make-shape (circle 20 "solid" "blue") 200 700 1 -2))
+(define S3 (make-shape (circle 40 "solid" "green") 750 70 -3 1))
 
 (define START (make-world-state 50 (list S1 S2 S3)))
 
@@ -33,14 +33,23 @@
 (define (render state)
    (render-list (world-state-shapes state)))
 
-;moves the shapes according to their speed
+;returns a list of shapes that have moved based on their speeds
 (define (move-shapes los)
-  (set! (shape-x (first los)) (+ (shape-x (first los)) (shape-speedx (first los)))))
+(cond
+  [(empty? los) empty]
+  [else
+  (cons
+   (make-shape (shape-image (first los)) (+ (shape-x (first los)) (shape-speedx (first los))) (+ (shape-y (first los)) (shape-speedy (first los))) (shape-speedx (first los)) (shape-speedy (first los)))
+   (move-shapes (rest los)))]))
+
+;updates the world-state
+(define (update-state world-state)
+  (make-world-state (world-state-tick world-state) (move-shapes (world-state-shapes world-state))))
 
 ;the main function
-(define (main state)
-  (big-bang state
-    (on-tick (move-shapes (world-state-shapes state)))
+(define (main world-state)
+  (big-bang world-state
+    (on-tick update-state)
     (to-draw render)))
 
 (main START)
