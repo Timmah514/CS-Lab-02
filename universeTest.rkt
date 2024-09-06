@@ -4,31 +4,43 @@
 (require 2htdp/image)
 (require 2htdp/universe)
 
+;Contains the current tick of the world and a list of the currently available shapes
 (define-struct world-state (tick shapes))
 
 (define MTS (empty-scene 800 800))
 
-(define-struct shape (image x y))
+;conatins an image, coordinates and speed of a shape
+(define-struct shape (image x y speedx speedy))
 
-(define S1 (make-shape (circle 50 "solid" "red") 20 30))
-(define S2 (make-shape (circle 20 "solid" "blue") 20 30))
-(define S3 (make-shape (circle 40 "solid" "red") 20 30))
+(define S1 (make-shape (circle 50 "solid" "red") 20 30 1 1))
+(define S2 (make-shape (circle 20 "solid" "blue") 200 700 1 -1))
+(define S3 (make-shape (circle 40 "solid" "green") 750 70 -1 1))
 
 (define START (make-world-state 50 (list S1 S2 S3)))
 
-(define (render state)
-  (render-list (world-state-shapes state)))
-
+;places each shape onto the mts by calling itself recursively - helper function to render
 (define (render-list los)
   (cond
     [(empty? los) MTS]
-    [(else
+    [else
      (place-image
-      (shape-image (first los)))
+      (shape-image (first los))
       (shape-x (first los))
       (shape-y (first los))
-      (render (rest los)))]))
+      (render-list (rest los)))]))
 
+;calls the render-list helper function to draw everything to the screen
+(define (render state)
+   (render-list (world-state-shapes state)))
+
+;moves the shapes according to their speed
+(define (move-shapes los)
+  (set! (shape-x (first los)) (+ (shape-x (first los)) (shape-speedx (first los)))))
+
+;the main function
 (define (main state)
   (big-bang state
-      (to-draw render)))
+    (on-tick (move-shapes (world-state-shapes state)))
+    (to-draw render)))
+
+(main START)
